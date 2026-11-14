@@ -25,22 +25,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// VERCEL: true kapag nasa Vercel tumatakbo
+const IS_VERCEL = !!process.env.VERCEL;
+
+// Kailangan sa Vercel para gumana ang secure cookies sa likod ng proxy
+app.set("trust proxy", 1);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ======================================================
-// VERCEL SUPPORT
-// Sa Vercel, serverless function ito: walang app.listen, read-only ang
-// filesystem (maliban sa /tmp), at kailangan ng "trust proxy" para
-// gumana ang secure cookies.
+// DATABASE INIT (isang beses lang per instance)
+// Sa Vercel, tinatawag ito sa unang request. Sa local, bago mag-listen.
 // ======================================================
 
-const IS_VERCEL = !!process.env.VERCEL;
-
-app.set("trust proxy", 1);
-
-// Isang beses lang magko-connect sa DB at gagawa ng admin (reused sa
-// susunod na requests ng parehong instance).
 let ready = null;
 
 function init() {
@@ -49,7 +47,7 @@ function init() {
             await connectDB();
             await initializeAdmin();
         })().catch((err) => {
-            ready = null; // payagan ang retry sa susunod na request
+            ready = null; // para makapag-retry sa susunod na request
             throw err;
         });
     }
@@ -58,14 +56,8 @@ function init() {
 }
 
 // ======================================================
-// SIGNED LOGIN COOKIES  (SECURITY FIX)
-// Dati plain cookies ang userId / role / username, kaya kahit sino ay
-// pwedeng palitan ang role ng "admin" sa browser DevTools. Ngayon ay
-// naka-sign ang mga ito gamit ang COOKIE_SECRET - kapag binago ng user,
-// hindi na valid at hindi siya makaka-login.
-//
-// Ilagay sa .env (at sa Vercel Environment Variables):
-//   COOKIE_SECRET=isang-mahaba-at-random-na-text
+// SIGNED LOGIN COOKIES
+// Ilagay sa .env / Vercel env:   COOKIE_SECRET=isang-mahaba-at-random-na-text
 // ======================================================
 
 let COOKIE_SECRET = process.env.COOKIE_SECRET;
@@ -73,9 +65,9 @@ let COOKIE_SECRET = process.env.COOKIE_SECRET;
 if (!COOKIE_SECRET) {
     COOKIE_SECRET = crypto.randomBytes(32).toString("hex");
     console.warn(
-        "⚠ Walang COOKIE_SECRET sa .env - random muna ang gagamitin, " +
-        "kaya malo-log out ang lahat sa bawat restart ng server. " +
-        "Sa Vercel, REQUIRED ito dahil magkakaiba ang secret ng bawat instance."
+        "⚠ Walang COOKIE_SECRET - random muna ang gagamitin, " +
+        "kaya malo-log out ang lahat sa bawat restart. " +
+        "Sa Vercel, REQUIRED ang COOKIE_SECRET."
     );
 }
 
@@ -84,9 +76,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(COOKIE_SECRET));
 
 // Ang valid (signed) na cookies lang ang ilalagay sa req.cookies.
-// Kaya hindi na kailangang baguhin ang middleware/requireRole.js at ang
-// mga routes - gumagana pa rin sila gamit ang req.cookies.userId / role.
-// Ang pekeng (unsigned) na cookie ay binubura rito.
 const AUTH_COOKIES = ["userId", "username", "role"];
 
 app.use((req, res, next) => {
@@ -107,8 +96,7 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, "public")));
 
-// Dapat nasa harap ng lahat ng routes: sinisigurong nakakonekta ang DB
-// bago pumasok ang request (mahalaga sa Vercel).
+// DB middleware: dapat bago ang lahat ng routes
 app.use(async (req, res, next) => {
     try {
         await init();
@@ -117,7 +105,8 @@ app.use(async (req, res, next) => {
         console.error("DB init failed:", error);
         res.status(500).json({
             success: false,
-            message: "Database connection failed"
+            message: "Database connection failed",
+            reason: error.message
         });
     }
 });
@@ -126,10 +115,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // ======================================================
-// ROLES  (NEW)
-// admin / owner  -> buong access (dashboard, users, inventory, etc.)
-// tattooartist   -> staff, may access ang dashboard
-// client         -> clientdashboard lang
+// ROLES
 // ======================================================
 
 const ADMIN_ROLES = ["admin", "owner"];
@@ -137,11 +123,8 @@ const STAFF_ROLES = ["admin", "owner", "tattooartist"];
 
 const isAdminRole = (role) => ADMIN_ROLES.includes(role);
 
-// FIX: dati admin lang ang napupunta sa /dashboard - kaya na-stuck sa
-// /clientdashboard ang owner at tattoo artist pagka-login.
 const homeFor = (role) => (STAFF_ROLES.includes(role) ? "/dashboard" : "/clientdashboard");
 
-// Maraming role ang pwede (page = redirect, /api = JSON error)
 function requireRoles(allowed) {
     return (req, res, next) => {
         const userId = req.cookies && req.cookies.userId;
@@ -203,8 +186,12 @@ const Booking =
     mongoose.models.Booking ||
     mongoose.model("Booking", bookingSchema, "appointments");
 
-// Sa Vercel, /tmp lang ang pwedeng sulatan. TEMPORARY ito: mawawala ang
-// mga file. Para sa totoong gamit, gumamit ng Cloudinary / S3 / Vercel Blob.
+// ======================================================
+// UPLOADS
+// Sa Vercel, read-only ang filesystem (maliban sa /tmp, na pansamantala lang).
+// Para sa totoong gamit, ilipat sa Cloudinary / S3 / Vercel Blob.
+// ======================================================
+
 const bookingUploadDir = IS_VERCEL
     ? "/tmp/uploads"
     : path.join(__dirname, "public", "uploads");
@@ -213,12 +200,6 @@ try {
     fs.mkdirSync(bookingUploadDir, { recursive: true });
 } catch (e) {
     console.warn("Could not create upload dir:", e.message);
-}
-
-// Sa Vercel, wala sa public/ ang uploads kaya i-serve natin mula /tmp
-// (gumagana lang sa parehong instance - pansamantala).
-if (IS_VERCEL) {
-    app.use("/uploads", express.static(bookingUploadDir));
 }
 
 const bookingUpload = multer({
@@ -239,9 +220,6 @@ const bookingUpload = multer({
     }
 });
 
-// Binabawasan ng 1 ang bawat consumable (inks, needles, gloves, etc.)
-// kapag natapos ang appointment. Idempotent - hindi doble ang bawas dahil
-// sa inventoryConsumedAt flag.
 function inventoryModel() {
     if (mongoose.models.Inventory) {
         return mongoose.models.Inventory;
@@ -269,9 +247,6 @@ async function consumeInventoryForAppointment(appointment) {
 
     const Inventory = inventoryModel();
 
-    // FIX: dati "consumePerAppointment: true" ang filter, pero walang ganoong
-    // field sa mga item (wala sa models/Inventory.js), kaya walang nababawasan.
-    // Ngayon, lahat ay nababawasan maliban sa mga naka-set na false.
     const result = await Inventory.updateMany(
         { consumePerAppointment: { $ne: false }, quantity: { $gt: 0 } },
         { $inc: { quantity: -1 } }
@@ -304,8 +279,6 @@ function uploadReference(req, res, next) {
     });
 }
 
-// Sa development, ipinapakita ang tunay na dahilan ng error para
-// madaling malaman kung bakit hindi nagsa-save. Sa production, generic lang.
 function errorDetail(error) {
     if (process.env.NODE_ENV === "production") {
         return "";
@@ -328,10 +301,7 @@ const VALID_STATUS = [
 ];
 
 // Habang may appointment ang client na may ganitong status, hindi siya
-// pwedeng mag-book ulit - maghihintay muna siya sa aksyon ng admin /
-// tattoo artist (Confirm, Reschedule o Cancel).
-// Gusto mong harangin hanggang matapos ang appointment? Gawing:
-//   ["Pending", "Confirmed", "Rescheduled"]
+// pwedeng mag-book ulit.
 const BLOCKING_STATUSES = ["Pending"];
 
 function computeAmount(size, width, height) {
@@ -379,8 +349,6 @@ async function findWaitingAppointment(userId) {
         .lean();
 }
 
-// Hinaharang ang bagong booking kung may naghihintay pa. Staff (admin / owner /
-// tattoo artist) ay hindi sakop nito.
 async function blockIfWaiting(req, res, next) {
     try {
         if (STAFF_ROLES.includes(req.user.role)) {
@@ -409,7 +377,6 @@ async function blockIfWaiting(req, res, next) {
     }
 }
 
-// Ginagamit ng clientdashboard: may naghihintay ba na appointment?
 bookingRouter.get("/pending", requireLoginCookie, async (req, res) => {
     try {
         const pending = await findWaitingAppointment(req.user.id);
@@ -618,8 +585,6 @@ bookingRouter.post(
     uploadReference,
     async (req, res) => {
         try {
-            // Tumatanggap ng ibang pangalan ng field; ang clientName ay
-            // babagsak sa username ng naka-login kung walang laman.
             const pick = (...keys) => {
                 for (const key of keys) {
                     const value = req.body[key];
@@ -641,7 +606,6 @@ bookingRouter.post(
 
             if (!clientName || !artist || !req.body.date ||
                 !time || !tattooType) {
-                // Sinasabi na kung aling field ang kulang
                 const missing = [];
 
                 if (!clientName) { missing.push("clientName"); }
@@ -803,14 +767,7 @@ app.use("/api/photos", photoRoutes);
 app.use("/", pageRoutes);
 
 // ======================================================
-// ADMIN ACCOUNT  (SECURITY FIX)
-// Wala nang hardcoded na "admin123".
-//  - Kung may ADMIN_PASSWORD sa .env, iyon ang gagamitin (at ia-update
-//    ang password ng admin tuwing mag-start kung iba ito).
-//  - Kung wala at bagong account pa lang, gagawa ng random na password
-//    at ipi-print ONE TIME sa console. Isulat agad.
-// Ang existing na admin password ay hindi binabago kung walang
-// ADMIN_PASSWORD sa .env.
+// ADMIN ACCOUNT
 // ======================================================
 
 const initializeAdmin = async () => {
@@ -844,7 +801,7 @@ const initializeAdmin = async () => {
             console.log("Username: admin");
 
             if (envPassword) {
-                console.log("Password: (galing sa ADMIN_PASSWORD sa .env)");
+                console.log("Password: (galing sa ADMIN_PASSWORD)");
             } else {
                 console.log("Password:", initialPassword);
                 console.log("⚠ Isulat ito at palitan agad. Hindi na ito ipapakita ulit.");
@@ -871,11 +828,7 @@ const initializeAdmin = async () => {
 
             await admin.save();
 
-            console.log("=================================");
-            console.log("✅ ADMIN ACCOUNT EXISTS");
-            console.log("Username:", admin.username);
-            console.log("Role:", admin.role);
-            console.log("=================================");
+            console.log("✅ ADMIN ACCOUNT EXISTS:", admin.username, "-", admin.role);
         }
 
     } catch (error) {
@@ -904,10 +857,6 @@ app.get("/login", (req, res) => {
 app.get("/register", (req, res) => {
     res.render("register");
 });
-
-// app.get("/landingpage", (req, res) => {
-//     res.render("landingpage");
-// });
 
 const MONTH_LABELS = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -1046,8 +995,8 @@ app.get("/clientdashboard", requireRole("client"), (req, res) => {
     });
 });
 
-app.get('/appointment', (req, res) => {
-    res.render('appointment');
+app.get("/appointment", (req, res) => {
+    res.render("appointment");
 });
 
 app.get("/inventory", (req, res) => {
@@ -1058,14 +1007,12 @@ app.get("/aboutus", (req, res) => {
     res.render("aboutus");
 });
 
-// owner = admin-level, kaya "admin" ang ipinapasa para lumabas ang admin nav/upload
 app.get("/photos", (req, res) => {
     const cookieRole = req.cookies.role || "client";
 
     res.render("photos", { role: isAdminRole(cookieRole) ? "admin" : cookieRole });
 });
 
-// NEW: User Management page (admin / owner lang)
 app.get("/users", requireRoles(ADMIN_ROLES), (req, res) => {
     res.render("users", {
         role: req.cookies.role,
@@ -1073,7 +1020,6 @@ app.get("/users", requireRoles(ADMIN_ROLES), (req, res) => {
     });
 });
 
-// FxPrint page
 app.get(["/fxprint", "/fxprint.ejs"], requireRoles(ADMIN_ROLES), (req, res) => {
     res.render("fxprint");
 });
@@ -1086,8 +1032,8 @@ app.get("/report&records", (req, res) => {
     res.render("report&records");
 });
 
-app.get('/clientappointment', requireRoles(ADMIN_ROLES), (req, res) => {
-    res.render('clientappointment');
+app.get("/clientappointment", requireRoles(ADMIN_ROLES), (req, res) => {
+    res.render("clientappointment");
 });
 
 app.get("/logout", (req, res) => {
@@ -1143,7 +1089,6 @@ app.post("/login", async (req, res) => {
             });
         }
 
-        // signed: true -> hindi na mapepeke ang userId / role sa browser
         const cookieOptions = {
             httpOnly: true,
             signed: true,
@@ -1156,11 +1101,7 @@ app.post("/login", async (req, res) => {
         res.cookie("username", user.username, cookieOptions);
         res.cookie("role", user.role, cookieOptions);
 
-        console.log("=================================");
-        console.log("LOGIN SUCCESS");
-        console.log("Username:", user.username);
-        console.log("Role from DB:", user.role);
-        console.log("=================================");
+        console.log("LOGIN SUCCESS:", user.username, "-", user.role);
 
         return res.status(200).json({
             success: true,
@@ -1237,11 +1178,7 @@ app.post("/register", async function(req, res) {
 
         await newUser.save();
 
-        console.log("=================================");
-        console.log("CLIENT REGISTERED");
-        console.log("Username:", username);
-        console.log("Role: client");
-        console.log("=================================");
+        console.log("CLIENT REGISTERED:", username);
 
         var savedUser = await User.findOne({
             username: username
@@ -1250,14 +1187,12 @@ app.post("/register", async function(req, res) {
         var passwordMatch = await bcrypt.compare(password, savedUser.password);
 
         if (passwordMatch) {
-            console.log("Password verification: SUCCESS");
             return res.status(201).json({
                 success: true,
                 message: "Registration successful! Please login.",
                 redirectUrl: "/login"
             });
         } else {
-            console.log("Password verification: FAILED");
             return res.status(500).json({
                 success: false,
                 message: "Registration verification failed. Please register again."
@@ -1277,8 +1212,7 @@ app.post("/register", async function(req, res) {
     }
 });
 
-// GET all appointments for admin
-app.get('/api/appointments/admin/all', requireRoles(ADMIN_ROLES), async (req, res) => {
+app.get("/api/appointments/admin/all", requireRoles(ADMIN_ROLES), async (req, res) => {
     try {
         const appointments = await Booking.find({}).sort({ date: -1 }).lean();
         res.json({ success: true, appointments: appointments });
@@ -1289,8 +1223,8 @@ app.get('/api/appointments/admin/all', requireRoles(ADMIN_ROLES), async (req, re
 
 // ======================================================
 // OPEN IMAGE IN PHOTOSHOP / FXPRINT
-// Works because the server and the browser run on the same PC.
-// HINDI gagana sa Vercel (walang Photoshop doon).
+// Gumagana lang kapag ang server at browser ay nasa iisang PC.
+// Hindi gagana sa Vercel.
 // ======================================================
 
 const OPEN_IMAGE_APPS = {
@@ -1317,8 +1251,6 @@ app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
         });
     }
 
-    // basename() blocks "../" tricks - only a plain file name is accepted,
-    // and only from public/uploads (bookingUploadDir).
     const fileName = path.basename(String((req.body && req.body.image) || ""));
 
     if (!/\.(jpg|jpeg|png|gif|webp|bmp|tif|tiff)$/i.test(fileName)) {
@@ -1332,7 +1264,6 @@ app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
     }
 
     try {
-        // Added cwd to ensure portable apps load their plugins correctly
         const child = spawn(exe, [filePath], {
             detached: true,
             stdio: "ignore",
@@ -1341,8 +1272,6 @@ app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
 
         child.on("error", (error) => {
             console.error("Spawn failed, trying fallback exec...", error);
-
-            // Fallback for stubborn portable apps that refuse to launch via spawn
             exec(`start "" "${exe}" "${filePath}"`, { cwd: path.dirname(exe) });
         });
 
@@ -1350,7 +1279,6 @@ app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
 
     } catch (err) {
         console.error("Error launching app:", err);
-        // Fallback
         exec(`start "" "${exe}" "${filePath}"`, { cwd: path.dirname(exe) });
     }
 
@@ -1366,8 +1294,7 @@ app.use("/api", (req, res) => {
 
 // ======================================================
 // START
-// Local: normal na app.listen.
-// Vercel: walang listen, ie-export lang ang app.
+// Local: mag-listen normal. Vercel: i-export lang ang app.
 // ======================================================
 
 if (!IS_VERCEL) {
