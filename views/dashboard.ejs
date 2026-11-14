@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/dashboard.css">
+
+    <title>Tattoo Home-Based Management System</title>
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo Logo">
+            Totats<span>Skin Art Tattoo</span>
+        </div>
+
+        <ul class="nav-links">
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of an Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+
+        <!-- Mobile hamburger (below the navbar, right side) -->
+        <button id="hamburgerBtn" class="hamburger" type="button"
+        aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+        <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- Mobile menu overlay (vertical links) -->
+    <div id="mobileMenu" class="mobile-menu">
+        <ul>
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of an Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+
+    <main class="dashboard-main">
+
+        <%
+            var view = (typeof stats !== 'undefined' && stats) ? stats : {};
+            var totalBookings = view.totalBookings || 0;
+            var revenue = view.revenue || 0;
+            var avgBookingValue = view.avgBookingValue || 0;
+            var noShowRate = view.noShowRate || 0;
+            var bookingsDelta = view.bookingsDelta || 0;
+            var revenueDelta = view.revenueDelta || 0;
+            var avgDelta = view.avgDelta || 0;
+            var noShowDelta = view.noShowDelta || 0;
+            var rangeLabel = view.rangeLabel || '';
+
+            var recent = (typeof recentBookings !== 'undefined' && recentBookings) ? recentBookings : [];
+            var upcoming = (typeof upcomingAppointments !== 'undefined' && upcomingAppointments) ? upcomingAppointments : [];
+            var trend = (typeof bookingTrend !== 'undefined' && bookingTrend) ? bookingTrend : [];
+
+            function deltaClass(value) {
+                return value < 0 ? 'delta down' : 'delta up';
+            }
+
+            function deltaLabel(value) {
+                return (value > 0 ? '+' : '') + value + '% last month';
+            }
+
+            function statusClassFor(status) {
+                if (status === 'Confirmed') return 'status-confirmed';
+                if (status === 'Completed') return 'status-completed';
+                if (status === 'Cancelled') return 'status-cancelled';
+                return 'status-pending';
+            }
+
+            function formatDate(value) {
+                if (!value) return 'N/A';
+                return new Date(value).toLocaleDateString('en-PH', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            }
+        %>
+
+        <!-- PAGE HEADER -->
+        <header class="page-header">
+            <div class="page-heading">
+                <h1>Dashboard Overview</h1>
+
+            </div>
+
+            <div class="page-actions">
+                <span class="date-chip"><%= rangeLabel %></span>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+
+            <div class="dashboard-column">
+
+                <!-- OVERVIEW CARDS -->
+                <section class="dashboard-overview">
+
+                    <div class="overview-card">
+                        <span class="overview-label"><span class="icon"></span> Bookings</span>
+                        <span class="overview-value" id="totalAppointments"><%= totalBookings.toLocaleString() %></span>
+                        <span class="<%= deltaClass(bookingsDelta) %>" id="bookingsDelta"><%= deltaLabel(bookingsDelta) %></span>
+                    </div>
+
+                    <div class="overview-card">
+                        <span class="overview-label"><span class="icon"></span> Revenue</span>
+                        <span class="overview-value" id="totalRevenue">₱<%= revenue.toLocaleString() %></span>
+                        <span class="<%= deltaClass(revenueDelta) %>" id="revenueDelta"><%= deltaLabel(revenueDelta) %></span>
+                    </div>
+
+                    <div class="overview-card">
+                        <span class="overview-label"><span class="icon"></span> Avg Booking Value</span>
+                        <span class="overview-value" id="avgBookingValue">₱<%= avgBookingValue.toLocaleString() %></span>
+                        <span class="<%= deltaClass(avgDelta) %>" id="avgDelta"><%= deltaLabel(avgDelta) %></span>
+                    </div>
+
+                    <div class="overview-card">
+                        <span class="overview-label"><span class="icon"></span> No Show Rate</span>
+                        <span class="overview-value" id="noShowRate"><%= noShowRate %>%</span>
+                        <span class="<%= deltaClass(noShowDelta) %>" id="noShowDelta"><%= deltaLabel(noShowDelta) %></span>
+                    </div>
+
+                </section>
+
+                <!-- BOOKING INSIGHTS CHART -->
+                <section class="panel booking-insights">
+                    <div class="panel-header">
+                        <h2>Booking Insights</h2>
+                    </div>
+
+                    <% if (trend.length > 1) { %>
+                        <%
+                            var chartWidth = 720;
+                            var chartHeight = 220;
+                            var maxCount = 1;
+
+                            for (var t = 0; t < trend.length; t++) {
+                                if (trend[t].count > maxCount) maxCount = trend[t].count;
+                            }
+
+                            var points = [];
+
+                            for (var p = 0; p < trend.length; p++) {
+                                var x = Math.round(p * (chartWidth / (trend.length - 1)));
+                                var y = Math.round(chartHeight - (trend[p].count / maxCount) * (chartHeight - 20) - 10);
+                                points.push(x + ',' + y);
+                            }
+                        %>
+                        <div class="chart">
+                            <svg viewBox="0 0 <%= chartWidth %> <%= chartHeight %>" preserveAspectRatio="none" role="img" aria-label="Bookings per month">
+                                <polyline class="chart-line" points="<%= points.join(' ') %>"></polyline>
+                            </svg>
+                            <div class="chart-labels">
+                                <% for (var l = 0; l < trend.length; l++) { %>
+                                    <span><%= trend[l].label %></span>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <p class="no-records">Not enough booking data yet</p>
+                    <% } %>
+                </section>
+
+            </div>
+
+            <div class="dashboard-column">
+
+                <!-- NEW BOOKINGS FEED -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>New Bookings Feed</h2>
+                        <a class="panel-link" href="/reports">All Status</a>
+                    </div>
+
+                    <table class="appointments-table">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Booking Type</th>
+                                <th>Style</th>
+                                <th>Date &amp; Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (recent.length) { %>
+                                <% for (var r = 0; r < recent.length; r++) { %>
+                                    <tr>
+                                        <td><%= recent[r].clientName || 'N/A' %></td>
+                                        <td><span class="status-badge <%= statusClassFor(recent[r].status) %>"><%= recent[r].tattooType || 'Tattoo' %></span></td>
+                                        <td><%= recent[r].tattooSize || recent[r].placement || 'N/A' %></td>
+                                        <td><%= formatDate(recent[r].date) %><br><span class="muted"><%= recent[r].time || '' %></span></td>
+                                    </tr>
+                                <% } %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" class="no-records">No bookings yet</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- UPCOMING APPOINTMENTS -->
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Upcoming Appointments</h2>
+                        <a class="panel-link" href="/reports">↗</a>
+                    </div>
+
+                    <ul class="appointment-list">
+                        <% if (upcoming.length) { %>
+                            <% for (var u = 0; u < upcoming.length; u++) { %>
+                                <li>
+                                    <div>
+                                        <span class="appointment-title"><%= upcoming[u].tattooType || 'Consultation' %> with <%= upcoming[u].clientName || 'Client' %></span>
+                                        <span class="muted"><%= formatDate(upcoming[u].date) %> · <%= upcoming[u].time || '' %></span>
+                                    </div>
+                                    <span class="status-badge <%= statusClassFor(upcoming[u].status) %>"><%= upcoming[u].status || 'Pending' %></span>
+                                </li>
+                            <% } %>
+                        <% } else { %>
+                            <li class="no-records">No upcoming appointments</li>
+                        <% } %>
+                    </ul>
+                </section>
+
+            </div>
+
+        </div>
+
+        <!-- TATTOO GALLERY -->
+        <section class="tattoo-gallery">
+
+            <h2 class="section-title">Recent Tattoo Works</h2>
+
+            <div class="gallery-grid">
+
+                <figure class="gallery-item">
+                    <img src="/images/Necktattoo.jpg" alt="Neck tattoo" loading="lazy">
+                    <figcaption>Neck Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/ChestTattoo.jpg" alt="Chest tattoo" loading="lazy">
+                    <figcaption>Chest Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Shoulder%20Half%20Sleeve.jpg" alt="Shoulder tattoo" loading="lazy">
+                    <figcaption>Shoulder Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/ShouldertoNeckTattoo.jpg" alt="Shoulder tattoo" loading="lazy">
+                    <figcaption>Shoulder to Neck Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/ForearmFullSleeve.jpg" alt="Full sleeve tattoo" loading="lazy">
+                    <figcaption>Full Sleeve</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/HalfSleeveTattoo.jpg" alt="Half sleeve tattoo" loading="lazy">
+                    <figcaption>Half Sleeve</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Forearmtattoo.jpg" alt="Inner arm tattoo" loading="lazy">
+                    <figcaption>Inner Arm</figcaption>
+                </figure>
+
+                <!-- FOREARM -->
+                <figure class="gallery-item">
+                    <img id="tattooImage" src="/images/ForearmFullSleeve.jpg" alt="Forearm">
+                    <figcaption>
+                        Fore Arm
+                        <br>
+                        <span class="category-choices">
+                            Category: <select id="categorySelect" onchange="changeImage()">
+                                <option value="ForearmFullSleeve">Full Sleeve</option>
+                                <option value="ForearmHalfSleeve">Half Sleeve</option>
+                                <option value="ForearmMinimalist">Minimalist</option>
+                                <option value="AngelForearmTattoo">Angel</option>
+                            </select>
+                        </span>
+                    </figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Wristtattoo.jpg" alt="Wrist tattoo" loading="lazy">
+                    <figcaption>Wrist Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Fullbacktattoo.jpg" alt="Full back tattoo" loading="lazy">
+                    <figcaption>Full Back</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/HalfBackTattoo.jpg" alt="Half back tattoo" loading="lazy">
+                    <figcaption>Half Back</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/SpineTattoo.jpg" alt="Spine tattoo" loading="lazy">
+                    <figcaption>Spine Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/LowerBack%20Tattoo.jpg" alt="Lower back tattoo" loading="lazy">
+                    <figcaption>Lower Back</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Ribcage.jpg" alt="Rib cage tattoo" loading="lazy">
+                    <figcaption>Rib Cage Tattoo</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/ArmbandTattoo.jpg" alt="Armband tattoo" loading="lazy">
+                    <figcaption>Armband Tattoo</figcaption>
+                </figure>
+
+                <!-- MINIMALIST -->
+                <figure class="gallery-item">
+                    <img id="minimalistImage" src="/images/MinimalistLetterTattoo.jpg" alt="Minimalist Tattoo">
+                    <figcaption>
+                        Minimalist
+                        <br>
+                        <span class="category-choices">
+                            Category: <select id="minimalistSelect" onchange="changeMinimalistImage()">
+                                <option value="MinimalistLetterTattoo.jpg">Minimalist Letter Tattoo</option>
+                                <option value="MinimalistneckTattoo.jpg">Minimalist Cross Tattoo</option>
+                                <option value="MinimalistButterfly.jpg">Minimalist Butterfly</option>
+                                <option value="MinimalistCoupledesign.jpg">Minimalist Couple Design</option>
+                            </select>
+                        </span>
+                    </figcaption>
+                </figure>
+
+                <!-- LEGS -->
+                <figure class="gallery-item">
+                    <img id="legsImage" src="/images/LegsTattoo.jpg" alt="Legs Tattoo">
+                    <figcaption>
+                        Legs
+                        <br>
+                        <span class="category-choices">
+                            Category: <select id="legsSelect" onchange="changeLegsImage()">
+                                <option value="LegsTattoo.jpg">Face with Roses Tattoo Leg</option>
+                                <option value="LegsTattoo2.jpg">Leg Dragon Tattoo</option>
+                            </select>
+                        </span>
+                    </figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/LowerLegTattoo.jpg" alt="Lower legs tattoo" loading="lazy">
+                    <figcaption>Lower Legs</figcaption>
+                </figure>
+
+                <figure class="gallery-item">
+                    <img src="/images/Ankle.jpg" alt="Ankle tattoo" loading="lazy">
+                    <figcaption>Ankle Tattoo</figcaption>
+                </figure>
+
+                <!-- BACK PIECE -->
+                <figure class="gallery-item">
+                    <img id="backPieceImage" src="/images/Fullbacktattoo.jpg" alt="Back Piece">
+                    <figcaption>
+                        Back Piece
+                        <br>
+                        <span class="category-choices">
+                            Category: <select id="backPieceSelect" onchange="changeBackPieceImage()">
+                                <option value="Fullbacktattoo">Full Back</option>
+                                <option value="SpineTattoo">Spine Tattoo</option>
+                                <option value="LowerBack%20Tattoo">Lower Back Tattoo</option>
+                                <option value="HalfBackTattoo">Half Back</option>       
+                            </select>
+                        </span>
+                    </figcaption>
+                </figure>
+
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/dashboard.js"></script>
+    <script>
+        (function () {
+            var btn = document.getElementById('hamburgerBtn');
+            var menu = document.getElementById('mobileMenu');
+            if (!btn || !menu) return;
+    
+            function setOpen(open) {
+                btn.classList.toggle('open', open);
+                menu.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', String(open));
+            }
+    
+            // Capture phase: mauuna ito sa lahat ng ibang handler, at haharangin
+            // ang mga duplicate na script para hindi mag-toggle ng dalawang beses.
+            document.addEventListener('click', function (e) {
+                if (btn.contains(e.target)) {
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                    setOpen(!menu.classList.contains('open'));
+                    return;
+                }
+                // Pindot sa link o sa labas ng panel = isara
+                if (menu.classList.contains('open') &&
+                    (e.target === menu || e.target.closest('#mobileMenu a'))) {
+                    setOpen(false);
+                }
+            }, true);
+    
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+    
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setOpen(false);
+            });
+        })();
+        </script>
+</body>
+</html>

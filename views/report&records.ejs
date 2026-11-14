@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reports &amp; Records - Tattoo Home-Based Management System</title>
+
+    <link rel="stylesheet" href="/css/reports.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo Logo">
+            Totats<span> Skin Art Tattoo</span>
+        </div>
+
+        <button id="hamburgerBtn" class="hamburger" type="button"
+                aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/clientappointment">Appointment of a Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports" class="active">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos Gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+
+    </nav>
+
+
+    <main class="container">
+
+        <div class="page-header">
+            <div>
+                <h1>Reports &amp; Records</h1>
+                <p>Manage and review client appointment records and reports.</p>
+            </div>
+        </div>
+
+
+        <!-- SUMMARY -->
+        <section class="summary-grid">
+
+            <div class="summary-card">
+                <div>
+                    <span>Total Appointments</span>
+                    <span id="totalAppointments">0</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div>
+                    <span>Total Clients</span>
+                    <span id="totalClients">0</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div>
+                    <span>Pending</span>
+                    <span id="totalPending">0</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div>
+                    <span>Completed</span>
+                    <span id="totalCompleted">0</span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- INVENTORY MANAGEMENT -->
+        <section class="inventory-section">
+
+            <div class="section-header"></div>
+
+            <div class="summary-grid inventory-summary">
+
+                <div class="summary-card">
+                    <div>
+                        <span>Total Items</span>
+                        <span id="totalItems">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div>
+                        <span>In Stock</span>
+                        <span id="inStockItems">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div>
+                        <span>Low Stock</span>
+                        <span id="lowStockItems">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div>
+                        <span>Out of Stock</span>
+                        <span id="outOfStockItems">0</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Reorder Level</th>
+                            <th>Stock Status</th>
+                        </tr>
+                    </thead>
+
+                    <!-- Rows are rendered from MongoDB by /js/reportInventory.js -->
+                    <tbody id="inventoryTable"></tbody>
+
+                </table>
+
+            </div>
+
+            <div class="no-records" id="noInventory">
+                No inventory items found.
+            </div>
+
+        </section>
+
+
+        <!-- APPOINTMENT RECORDS -->
+        <section class="records-section">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Appointment Records</h2>
+                    <p>List of client appointment history.</p>
+                </div>
+
+                <div class="filter-area">
+
+                    <input type="text" id="searchInput" placeholder="Search client...">
+
+                    <select id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Rescheduled">Rescheduled</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+
+                    <button type="button" id="exportBtn">Export CSV</button>
+                    <button type="button" id="printBtn">Print</button>
+
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>Contact</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Tattoo Type</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <!-- Rows are rendered from MongoDB by /js/report.js -->
+                    <tbody id="recordsTable"></tbody>
+
+                </table>
+
+            </div>
+
+            <div class="no-records" id="noRecords">
+                No records found.
+            </div>
+
+        </section>
+
+
+        <!-- CLIENT RECORDS -->
+        <section class="client-records">
+
+            <div class="section-header">
+                <div>
+                    <h2>Client Records</h2>
+                    <p>Registered clients in the system.</p>
+                </div>
+            </div>
+
+            <div class="client-grid" id="clientGrid"></div>
+
+            <div class="no-records" id="noClients">
+                No clients found.
+            </div>
+
+        </section>
+
+
+        <!-- REFERENCE PHOTOS -->
+        <section class="client-records">
+
+            <div class="section-header">
+                <div>
+                    <h2>Reference Photos</h2>
+                    <p>Photos submitted or chosen by clients for their appointments.</p>
+                </div>
+            </div>
+
+            <div class="photo-grid" id="photoGrid"></div>
+
+            <div class="no-records" id="noPhotos">
+                No reference photos found.
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="imageModal" class="image-modal">
+        <div class="image-modal-content">
+            <button type="button" id="closeImageModal" class="image-modal-close">&times;</button>
+            <img id="imagePreview" src="" alt="Reference photo">
+        </div>
+    </div>
+
+
+    <script src="/js/report.js"></script>
+    <script src="/js/reportInventory.js"></script>
+    <script src="/js/hamburger.js"></script>
+
+</body>
+</html>

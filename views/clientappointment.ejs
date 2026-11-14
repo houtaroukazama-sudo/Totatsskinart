@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Management - Tattoo Home-Based Management System</title>
+
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/appointment.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="logo">
+            <img src="/images/TotatsSkinArtTattoo.jpg" alt="Totats Skin Art Tattoo Logo">
+            Totats<span>Skin Art Tattoo</span>
+        </div>
+
+        <ul class="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/clientappointment" class="active">Appointment of a Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos Gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+
+        <button id="hamburgerBtn" class="hamburger" type="button"
+                aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+            <span></span><span></span><span></span>
+        </button>
+
+    </nav>
+
+    <!-- Mobile menu (outside the navbar, right after it) -->
+    <div id="mobileMenu" class="mobile-menu">
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/clientappointment" class="active">Appointment of a Client</a></li>
+            <li><a href="/inventory">Inventory</a></li>
+            <li><a href="/reports">Reports &amp; Records</a></li>
+            <li><a href="/photos">Photos Gallery</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+
+
+    <main class="container">
+
+        <div class="page-header">
+            <div>
+                <h1>Client Appointments</h1>
+                <p>Manage and monitor all client appointments.</p>
+            </div>
+        </div>
+
+
+        <section class="dashboard-overview overview-row">
+
+            <div class="overview-card">
+                <span class="overview-label"><span class="icon"></span> Bookings</span>
+                <span class="overview-value" id="statBookings">0</span>
+                <span class="delta up" id="statBookingsDelta">0% last month</span>
+            </div>
+
+            <div class="overview-card">
+                <span class="overview-label"><span class="icon"></span> Revenue</span>
+                <span class="overview-value" id="statRevenue">₱0</span>
+                <span class="delta up" id="statRevenueDelta">0% last month</span>
+            </div>
+
+            <div class="overview-card">
+                <span class="overview-label"><span class="icon"></span> Avg Booking Value</span>
+                <span class="overview-value" id="statAverage">₱0</span>
+                <span class="delta up" id="statAverageDelta">0% last month</span>
+            </div>
+
+            <div class="overview-card">
+                <span class="overview-label"><span class="icon"></span> No Show Rate</span>
+                <span class="overview-value" id="statNoShow">0%</span>
+                <span class="delta up" id="statNoShowDelta">0% last month</span>
+            </div>
+
+        </section>
+
+
+        <section class="controls">
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search client...">
+            </div>
+
+            <select id="statusFilter">
+                <option value="all">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Rescheduled">Rescheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+
+        </section>
+
+
+        <section class="appointment-card">
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Artist</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Service</th>
+                            <th>Size</th>
+                            <th>Placement</th>
+                            <th>Amount</th>
+                            <th>Image</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <!-- Rows are rendered from MongoDB by /js/clientappointment.js -->
+                    <tbody id="appointmentTable"></tbody>
+
+                </table>
+
+            </div>
+
+            <div id="noAppointments" class="no-appointments">
+                No appointments found.
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- RESCHEDULE -->
+    <div id="rescheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2>Reschedule Appointment</h2>
+                    <p>Change the client's appointment schedule.</p>
+                </div>
+                <button class="close-btn" onclick="closeReschedule()">&times;</button>
+            </div>
+
+            <div class="client-details">
+                <div>
+                    <span>Client</span>
+                    <strong id="modalClient"></strong>
+                </div>
+                <div>
+                    <span>Artist</span>
+                    <strong id="modalArtist"></strong>
+                </div>
+            </div>
+
+            <form id="rescheduleForm">
+                <div class="form-group">
+                    <label for="newDate">New Appointment Date</label>
+                    <input type="date" id="newDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="newTime">New Appointment Time</label>
+                    <input type="time" id="newTime" required>
+                </div>
+
+                <div id="conflictMessage" class="conflict-message"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="cancel-modal-btn" onclick="closeReschedule()">Cancel</button>
+                    <button type="submit" class="save-btn">Save Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- IMAGE -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content" style="max-width: 560px;">
+            <div class="modal-header">
+                <div>
+                    <h2>Reference Photo</h2>
+                    <p>Design reference uploaded by the client.</p>
+                </div>
+                <button class="close-btn" onclick="closeImage()">&times;</button>
+            </div>
+
+            <div style="text-align: center;">
+                <img id="imagePreview" class="image-preview" src="" alt="Reference photo">
+            </div>
+        </div>
+    </div>
+
+
+    <!-- TATTOO DETAILS -->
+    <div id="tattooDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <div>
+                    <h2>Tattoo Details</h2>
+                    <p>Size, placement and computed amount.</p>
+                </div>
+                <button class="close-btn" onclick="closeTattooDetails()">&times;</button>
+            </div>
+
+            <div class="client-details">
+                <div>
+                    <span>Size</span>
+                    <strong id="detailSize">-</strong>
+                </div>
+                <div>
+                    <span>Dimensions</span>
+                    <strong id="detailDimensions">-</strong>
+                </div>
+                <div>
+                    <span>Placement</span>
+                    <strong id="detailPlacement">-</strong>
+                </div>
+                <div>
+                    <span>Amount</span>
+                    <strong id="detailAmount">-</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- PAYMENT -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-header">
+                <div>
+                    <h2>Select Payment</h2>
+                    <p>Choose how the client paid.</p>
+                </div>
+                <button class="close-btn" onclick="closePayment()">&times;</button>
+            </div>
+
+            <div class="payment-options">
+                <button type="button" class="save-btn" data-pay="GCash">GCash</button>
+                <button type="button" class="save-btn" data-pay="Cash">Cash</button>
+                <button type="button" class="cancel-modal-btn" data-pay="Unpaid">Unpaid</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MESSAGE -->
+    <div id="messageModal" class="modal">
+        <div class="message-content">
+            <div id="messageIcon" class="message-icon">&#10003;</div>
+            <h2 id="messageTitle">Appointment Updated</h2>
+            <p id="messageText">The appointment has been updated successfully.</p>
+            <button class="save-btn" onclick="closeMessage()">OK</button>
+        </div>
+    </div>
+
+
+    <script src="/js/clientappointment.js"></script>
+    <script src="/js/hamburger.js"></script>
+    <script src="/js/open-image.js"></script>
+</body>
+</html>

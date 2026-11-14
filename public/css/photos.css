@@ -1,0 +1,579 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;   /* fallback para sa lumang browser */
+    overflow-x: clip;     /* para gumana ang sticky navbar */
+}
+
+body {
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* ===== BACKGROUND IMAGE WITH BLUR ===== */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/images/logo-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ===== NAVBAR (STICKY - laging nasa taas habang nag-scroll) ===== */
+.navbar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 1000;          /* dati 1 - natatakpan ng .container (z-index 1) */
+    width: 100%;
+    min-height: 70px;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    color: #fff;
+}
+
+/* ===== LOGO STYLES WITH IMAGE ===== */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.logo img {
+    height: 45px;
+    width: auto;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo span {
+    color: #e63946;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    list-style: none;
+    flex: 1;
+}
+
+.nav-links li {
+    display: inline-block;
+}
+
+.nav-links a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    padding: 11px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    background: #e63946;
+}
+
+/* ===== HAMBURGER BUTTON (nakatago sa desktop) ===== */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 46px;
+    height: 46px;
+    padding: 10px;
+    background: #fff;
+    border: 2px solid #111;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.hamburger span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: #111;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+.client {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.client-icon {
+    width: 38px;
+    height: 38px;
+    background: #e63946;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+}
+
+.page-header {
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 20px 25px;
+    border-radius: 10px;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: #666;
+    font-size: 15px;
+}
+
+.gallery-section {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.section-header h2 {
+    font-size: 21px;
+    margin-bottom: 6px;
+}
+
+.section-header p {
+    color: #777;
+    font-size: 14px;
+}
+
+.gallery-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.photo-card,
+.design-card {
+    min-width: 0;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: 0.3s ease;
+}
+
+.photo-card:hover,
+.design-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.photo-placeholder {
+    width: 100%;
+    height: 220px;
+    background: #eee;
+    overflow: hidden;
+}
+
+.photo-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: 0.3s ease;
+}
+
+.photo-card:hover .photo-placeholder img,
+.design-card:hover .photo-placeholder img {
+    transform: scale(1.04);
+}
+
+.photo-info {
+    padding: 17px;
+}
+
+.photo-info h3 {
+    font-size: 16px;
+    margin-bottom: 7px;
+}
+
+.photo-info p {
+    color: #777;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.choose-btn {
+    display: inline-block;
+    margin-top: 15px;
+    background: #e63946;
+    color: #fff;
+    text-decoration: none;
+    padding: 9px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.3s ease;
+}
+
+.choose-btn:hover {
+    background: #c92f3b;
+}
+
+/* ======================================================
+   RESPONSIVE
+   ====================================================== */
+
+@media (max-width: 1200px) {
+    .navbar {
+        padding: 0 20px;
+    }
+
+    .nav-links a {
+        padding: 10px 9px;
+        font-size: 13px;
+    }
+
+    .logo {
+        font-size: 21px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .navbar {
+        min-height: auto;
+        padding: 20px;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .nav-links {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+        flex: none;
+    }
+
+    .client {
+        display: none;
+    }
+
+    .container {
+        padding: 25px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ======================================================
+   MOBILE: HAMBURGER + DARK SIDE DRAWER
+   ====================================================== */
+
+@media (max-width: 768px) {
+
+    /* Ibalik ang navbar sa isang row (override ng 900px rule) - sticky pa rin */
+    .navbar {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        min-height: 70px;
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 0;
+        border-bottom: 3px solid #e63946;
+    }
+
+    .logo { font-size: 17px; }
+
+    /* Hamburger / X button: puting box, nasa ibaba ng navbar sa right */
+    .hamburger {
+        display: flex;
+        position: absolute;
+        top: calc(100% + 13px);
+        right: 14px;
+        z-index: 1002;              /* laging nasa ibabaw ng drawer */
+    }
+
+    /* ===== FULL-SCREEN OVERLAY (ito ang menu) =====
+       Pag pinindot ang labas ng drawer, ang .nav-links mismo ang tatamaan
+       kaya sumasara ang menu (e.target === menu sa JS). */
+    .nav-links {
+        --drawer-w: min(70vw, 320px);
+
+        position: fixed;
+        top: 73px;                  /* 70px navbar + 3px border */
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        flex: none;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-end;      /* right-aligned ang links */
+        justify-content: flex-start;
+        gap: 14px;
+        /* itulak ang mga link papasok sa loob ng drawer */
+        padding: 80px 20px 30px calc(100% - var(--drawer-w) + 20px);
+        background: rgba(0, 0, 0, 0.45);   /* dim */
+        overflow-y: auto;
+        z-index: 1000;
+
+        /* fade ang overlay */
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s;
+    }
+
+    .nav-links.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* ===== ANG ITIM NA DRAWER PANEL (nasa kanan) ===== */
+    .nav-links::before {
+        content: "";
+        position: fixed;
+        top: 73px;
+        right: 0;
+        bottom: 0;
+        width: var(--drawer-w);
+        background: #111;
+        border-left: 3px solid #e63946;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+        z-index: -1;                /* nasa ilalim ng mga link */
+        transform: translateX(100%);
+        transition: transform 0.35s ease;
+    }
+
+    .nav-links.open::before {
+        transform: translateX(0);
+    }
+
+    .nav-links li {
+        display: block;
+        width: 100%;
+    }
+
+    /* ===== Menu buttons (boxed) ===== */
+    .nav-links a {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        text-align: right;
+        font-size: 1.1rem;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        -webkit-tap-highlight-color: transparent;
+
+        /* blur-to-sharp entrance */
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateX(16px);
+        transition:
+            opacity 0.7s ease,
+            filter 0.7s ease,
+            transform 0.7s ease,
+            color 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .nav-links.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
+    .nav-links.open li:nth-child(1) a { transition-delay: 0.05s; }
+    .nav-links.open li:nth-child(2) a { transition-delay: 0.12s; }
+    .nav-links.open li:nth-child(3) a { transition-delay: 0.19s; }
+    .nav-links.open li:nth-child(4) a { transition-delay: 0.26s; }
+    .nav-links.open li:nth-child(5) a { transition-delay: 0.33s; }
+    .nav-links.open li:nth-child(6) a { transition-delay: 0.40s; }
+
+    /* Active page: red na box */
+    .nav-links a.active {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+    }
+
+    /* Hover (desktop/tablet) at press (touch)
+       (li a para mas malakas kaysa sa delay rules sa taas) */
+    .nav-links.open li a:hover,
+    .nav-links.open li a:active,
+    .nav-links.open li a:focus-visible {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;
+        outline: none;
+    }
+
+    /* Space para hindi matakpan ng hamburger ang title */
+    .container {
+        padding-top: 70px;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 70px 20px 20px;
+    }
+
+    .page-header h1 {
+        font-size: 26px;
+    }
+
+    .gallery-section {
+        padding: 20px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .photo-placeholder {
+        height: 250px;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 70px 14px 20px;
+    }
+
+    .page-header {
+        padding: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .gallery-section {
+        padding: 14px;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    /* 2 columns para kita ang maraming picture */
+    .gallery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    /* Sukat ng picture: sumusunod sa lapad ng card */
+    .photo-placeholder {
+        height: auto;
+        aspect-ratio: 3 / 4;
+        background: #ddd;
+    }
+
+    .photo-placeholder img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        object-fit: cover;
+    }
+
+    .photo-info {
+        padding: 10px;
+    }
+
+    .photo-info h3 {
+        font-size: 14px;
+    }
+
+    .photo-info p {
+        font-size: 12px;
+    }
+
+    .choose-btn {
+        margin-top: 10px;
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+}

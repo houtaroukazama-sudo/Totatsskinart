@@ -1,0 +1,595 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;   /* fallback para sa lumang browser */
+    overflow-x: clip;     /* para gumana ang sticky navbar */
+}
+
+body {
+    background: #f5f5f5;
+    color: #222;
+}
+
+/* ===== BACKGROUND IMAGE WITH BLUR ===== */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/images/logo-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* ===== NAVBAR (STICKY) ===== */
+.navbar {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    width: 100%;
+    min-height: 70px;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    color: #fff;
+}
+
+/* ===== LOGO ===== */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.logo img {
+    height: 45px;
+    width: auto;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo span {
+    color: #e63946;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    list-style: none;
+    flex: 1;
+}
+
+.nav-links li {
+    display: inline-block;
+}
+
+.nav-links a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    padding: 11px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+    background: #e63946;
+}
+
+/* ===== HAMBURGER BUTTON (nakatago sa desktop) ===== */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 46px;
+    height: 46px;
+    padding: 10px;
+    background: #fff;
+    border: 2px solid #111;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.hamburger span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: #111;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+.client {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.client-icon {
+    width: 38px;
+    height: 38px;
+    background: #e63946;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== CONTENT ===== */
+.welcome {
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.welcome h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.welcome p {
+    color: #666;
+    font-size: 15px;
+}
+
+.dashboard-card {
+    width: 100%;
+    background: #111;
+    color: #fff;
+    padding: 35px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+    max-width: 650px;
+}
+
+.card-content h2 {
+    font-size: 25px;
+    margin-bottom: 12px;
+}
+
+.card-content p {
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.card-content button {
+    border: none;
+    background: #e63946;
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    transition: 0.3s ease;
+}
+
+.card-content button:hover {
+    background: #c92f3b;
+}
+
+.dashboard-section {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-section h2 {
+    font-size: 21px;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background: #fafafa;
+    color: #555;
+    font-size: 14px;
+}
+
+td {
+    font-size: 14px;
+}
+
+tr:hover {
+    background: #fafafa;
+}
+
+/* ===== MODAL ===== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
+    animation: modalOpen 0.25s ease;
+}
+
+@keyframes modalOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    font-size: 23px;
+}
+
+.close-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    background: #f1f1f1;
+    color: #333;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 30px;
+    transition: 0.3s ease;
+}
+
+.close-btn:hover {
+    background: #e63946;
+    color: #fff;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+    background: #fff;
+    transition: 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #e63946;
+    box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.cancel-btn,
+.submit-btn {
+    border: none;
+    padding: 11px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.cancel-btn {
+    background: #eee;
+    color: #333;
+}
+
+.cancel-btn:hover {
+    background: #ddd;
+}
+
+.submit-btn {
+    background: #e63946;
+    color: #fff;
+}
+
+.submit-btn:hover {
+    background: #c92f3b;
+}
+
+/* ======================================================
+   RESPONSIVE
+   ====================================================== */
+
+@media (max-width: 1200px) {
+    .navbar { padding: 0 20px; }
+    .nav-links a { padding: 10px 9px; font-size: 13px; }
+    .logo { font-size: 21px; }
+}
+
+@media (max-width: 900px) {
+    .client { display: none; }
+    .container { padding: 25px; }
+}
+
+/* ===== MOBILE: HAMBURGER + DARK SIDE DRAWER ===== */
+@media (max-width: 768px) {
+
+    .navbar {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        min-height: 70px;
+        padding: 0 16px;
+        flex-direction: row;
+        gap: 0;
+        border-bottom: 3px solid #e63946;
+    }
+
+    .logo { font-size: 17px; }
+
+    /* Hamburger: puting box, nasa ibaba ng navbar sa right */
+    .hamburger {
+        display: flex;
+        position: absolute;
+        top: calc(100% + 13px);
+        right: 14px;
+        z-index: 1002;
+    }
+
+    /* Full-screen overlay (ito ang menu) */
+    .nav-links {
+        --drawer-w: min(70vw, 320px);
+
+        position: fixed;
+        top: 73px;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        flex: none;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        justify-content: flex-start;
+        gap: 14px;
+        padding: 80px 20px 30px calc(100% - var(--drawer-w) + 20px);
+        background: rgba(0, 0, 0, 0.45);
+        overflow-y: auto;
+        z-index: 1000;
+
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s;
+    }
+
+    .nav-links.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Itim na drawer panel sa kanan */
+    .nav-links::before {
+        content: "";
+        position: fixed;
+        top: 73px;
+        right: 0;
+        bottom: 0;
+        width: var(--drawer-w);
+        background: #111;
+        border-left: 3px solid #e63946;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.35);
+        z-index: -1;
+        transform: translateX(100%);
+        transition: transform 0.35s ease;
+    }
+
+    .nav-links.open::before { transform: translateX(0); }
+
+    .nav-links li {
+        display: block;
+        width: 100%;
+    }
+
+    .nav-links a {
+        display: block;
+        width: 100%;
+        padding: 14px 18px;
+        text-align: right;
+        font-size: 1.1rem;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        -webkit-tap-highlight-color: transparent;
+
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateX(16px);
+        transition:
+            opacity 0.7s ease,
+            filter 0.7s ease,
+            transform 0.7s ease,
+            color 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .nav-links.open a {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateX(0);
+    }
+
+    .nav-links.open li:nth-child(1) a { transition-delay: 0.05s; }
+    .nav-links.open li:nth-child(2) a { transition-delay: 0.12s; }
+    .nav-links.open li:nth-child(3) a { transition-delay: 0.19s; }
+    .nav-links.open li:nth-child(4) a { transition-delay: 0.26s; }
+    .nav-links.open li:nth-child(5) a { transition-delay: 0.33s; }
+    .nav-links.open li:nth-child(6) a { transition-delay: 0.40s; }
+
+    .nav-links a.active {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+    }
+
+    .nav-links.open li a:hover,
+    .nav-links.open li a:active,
+    .nav-links.open li a:focus-visible {
+        color: #e63946;
+        background: rgba(230, 57, 70, 0.12);
+        border-color: #e63946;
+        box-shadow: 0 6px 16px rgba(230, 57, 70, 0.25);
+        transform: translateX(-6px);
+        transition-delay: 0s;
+        outline: none;
+    }
+
+    /* Space para hindi matakpan ng hamburger ang title */
+    .container { padding-top: 70px; }
+}
+
+@media (max-width: 600px) {
+    .container { padding: 70px 14px 20px; }
+
+    .welcome { padding: 16px; }
+    .welcome h1 { font-size: 24px; }
+
+    .dashboard-card { padding: 22px; }
+    .card-content h2 { font-size: 21px; }
+
+    .dashboard-section {
+        padding: 16px;
+        overflow-x: auto;
+    }
+
+    table { min-width: 650px; }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .modal { padding: 12px; }
+    .modal-content { padding: 20px; }
+
+    .modal-actions { flex-direction: column-reverse; }
+
+    .cancel-btn,
+    .submit-btn { width: 100%; }
+}
