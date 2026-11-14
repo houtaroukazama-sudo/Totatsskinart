@@ -29,13 +29,43 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ======================================================
+// VERCEL SUPPORT
+// Sa Vercel, serverless function ito: walang app.listen, read-only ang
+// filesystem (maliban sa /tmp), at kailangan ng "trust proxy" para
+// gumana ang secure cookies.
+// ======================================================
+
+const IS_VERCEL = !!process.env.VERCEL;
+
+app.set("trust proxy", 1);
+
+// Isang beses lang magko-connect sa DB at gagawa ng admin (reused sa
+// susunod na requests ng parehong instance).
+let ready = null;
+
+function init() {
+    if (!ready) {
+        ready = (async () => {
+            await connectDB();
+            await initializeAdmin();
+        })().catch((err) => {
+            ready = null; // payagan ang retry sa susunod na request
+            throw err;
+        });
+    }
+
+    return ready;
+}
+
+// ======================================================
 // SIGNED LOGIN COOKIES  (SECURITY FIX)
 // Dati plain cookies ang userId / role / username, kaya kahit sino ay
 // pwedeng palitan ang role ng "admin" sa browser DevTools. Ngayon ay
 // naka-sign ang mga ito gamit ang COOKIE_SECRET - kapag binago ng user,
 // hindi na valid at hindi siya makaka-login.
 //
-// Ilagay sa .env:   COOKIE_SECRET=isang-mahaba-at-random-na-text
+// Ilagay sa .env (at sa Vercel Environment Variables):
+//   COOKIE_SECRET=isang-mahaba-at-random-na-text
 // ======================================================
 
 let COOKIE_SECRET = process.env.COOKIE_SECRET;
@@ -44,7 +74,8 @@ if (!COOKIE_SECRET) {
     COOKIE_SECRET = crypto.randomBytes(32).toString("hex");
     console.warn(
         "⚠ Walang COOKIE_SECRET sa .env - random muna ang gagamitin, " +
-        "kaya malo-log out ang lahat sa bawat restart ng server."
+        "kaya malo-log out ang lahat sa bawat restart ng server. " +
+        "Sa Vercel, REQUIRED ito dahil magkakaiba ang secret ng bawat instance."
     );
 }
 
@@ -75,6 +106,21 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static(path.join(__dirname, "public")));
+
+// Dapat nasa harap ng lahat ng routes: sinisigurong nakakonekta ang DB
+// bago pumasok ang request (mahalaga sa Vercel).
+app.use(async (req, res, next) => {
+    try {
+        await init();
+        next();
+    } catch (error) {
+        console.error("DB init failed:", error);
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed"
+        });
+    }
+});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -157,9 +203,23 @@ const Booking =
     mongoose.models.Booking ||
     mongoose.model("Booking", bookingSchema, "appointments");
 
-const bookingUploadDir = path.join(__dirname, "public", "uploads");
+// Sa Vercel, /tmp lang ang pwedeng sulatan. TEMPORARY ito: mawawala ang
+// mga file. Para sa totoong gamit, gumamit ng Cloudinary / S3 / Vercel Blob.
+const bookingUploadDir = IS_VERCEL
+    ? "/tmp/uploads"
+    : path.join(__dirname, "public", "uploads");
 
-fs.mkdirSync(bookingUploadDir, { recursive: true });
+try {
+    fs.mkdirSync(bookingUploadDir, { recursive: true });
+} catch (e) {
+    console.warn("Could not create upload dir:", e.message);
+}
+
+// Sa Vercel, wala sa public/ ang uploads kaya i-serve natin mula /tmp
+// (gumagana lang sa parehong instance - pansamantala).
+if (IS_VERCEL) {
+    app.use("/uploads", express.static(bookingUploadDir));
+}
 
 const bookingUpload = multer({
     storage: multer.diskStorage({
@@ -1230,6 +1290,7 @@ app.get('/api/appointments/admin/all', requireRoles(ADMIN_ROLES), async (req, re
 // ======================================================
 // OPEN IMAGE IN PHOTOSHOP / FXPRINT
 // Works because the server and the browser run on the same PC.
+// HINDI gagana sa Vercel (walang Photoshop doon).
 // ======================================================
 
 const OPEN_IMAGE_APPS = {
@@ -1238,6 +1299,12 @@ const OPEN_IMAGE_APPS = {
 };
 
 app.post("/api/open-image", requireRoles(ADMIN_ROLES), (req, res) => {
+    if (IS_VERCEL) {
+        return res.status(501).json({
+            error: "Opening local apps only works when the server runs on your own PC."
+        });
+    }
+
     const exe = OPEN_IMAGE_APPS[req.body && req.body.app];
 
     if (!exe) {
@@ -1297,25 +1364,22 @@ app.use("/api", (req, res) => {
     });
 });
 
-const startServer = async () => {
-    try {
-        console.log("Connecting to MongoDB...");
+// ======================================================
+// START
+// Local: normal na app.listen.
+// Vercel: walang listen, ie-export lang ang app.
+// ======================================================
 
-        await connectDB();
-        await initializeAdmin();
-
-        app.listen(PORT, () => {
-            console.log(
-                ` Server running at http://localhost:${PORT}`
-            );
+if (!IS_VERCEL) {
+    init()
+        .then(() => {
+            app.listen(PORT, () => {
+                console.log(` Server running at http://localhost:${PORT}`);
+            });
+        })
+        .catch((error) => {
+            console.error("Server error:", error);
         });
+}
 
-    } catch (error) {
-        console.error(
-            "Server error:",
-            error
-        );
-    }
-};
-
-startServer();
+export default app;

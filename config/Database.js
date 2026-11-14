@@ -12,10 +12,8 @@ async function connectDB() {
     .replace(/^['"]|['"]$/g, "")
     .replace(/[\s\u0000-\u001F\u007F\u200B\uFEFF]/g, "");
 
-  if (!uri) {
-    console.error("MONGO_URI is not set");
-    process.exit(1);
-  }
+  // Throw instead of process.exit(1) so Vercel functions don't get killed
+  if (!uri) throw new Error("MONGO_URI is not set");
 
   // Log with password hidden, to help debugging
   console.log("Connecting to:", uri.replace(/\/\/([^:]+):[^@]+@/, "//$1:****@"));
@@ -27,9 +25,9 @@ async function connectDB() {
       return mongoose.connection;
     })
     .catch((err) => {
-      connecting = null;
+      connecting = null; // allow retry on next request
       console.error("MongoDB Connection Failed:", err.message);
-      process.exit(1);
+      throw err;
     });
 
   return connecting;
